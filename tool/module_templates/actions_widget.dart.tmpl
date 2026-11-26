@@ -1,0 +1,38 @@
+import 'package:material_ui/material_ui.dart';
+import 'package:__package__/features/auth/domain/entities/auth_user.dart';
+import 'package:__package__/features/__snake__/__snake___config.dart';
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+
+class __pascal__Actions extends StatelessWidget {
+  const __pascal__Actions({
+    required this.item,
+    required this.user,
+    required this.onEdit,
+    required this.onDelete,
+    super.key,
+  });
+
+  final __pascal__Entity item;
+  final AuthUser? user;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (user?.canAccess(__camel__UpdatePermission) ?? false)
+        IconButton(
+          tooltip: 'Edit',
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: onEdit,
+        ),
+      if (user?.canAccess(__camel__DeletePermission) ?? false)
+        IconButton(
+          tooltip: 'Delete',
+          icon: const Icon(Icons.delete_outline),
+          onPressed: onDelete,
+        ),
+    ],
+  );
+}

@@ -1,0 +1,37 @@
+import 'package:dio/dio.dart';
+import 'package:__package__/features/__snake__/__snake___config.dart';
+import 'package:__package__/features/__snake__/data/models/__snake___model.dart';
+
+class __pascal__RemoteDataSource {
+  const __pascal__RemoteDataSource(this._dio);
+  final Dio _dio;
+
+  Future<List<__pascal__Model>> list() async {
+    final response = await _dio.get<Object?>(__camel__Path);
+    final body = response.data;
+    final payload = body is Map && body.containsKey('data') ? body['data'] : body;
+    if (payload is! List) {
+      throw const FormatException('The __snake__ API returned an invalid list.');
+    }
+    return payload.map((value) {
+      if (value is! Map || value['id'] == null || value['name'] is! String) {
+        throw const FormatException('The __snake__ API returned an invalid record.');
+      }
+      return __pascal__Model.fromJson(
+        Map<String, Object?>.from(value),
+      );
+    }).toList();
+  }
+
+  Future<void> create(String name) async {
+    await _dio.post<Object?>(__camel__Path, data: {'name': name});
+  }
+
+  Future<void> update(String id, String name) async {
+    await _dio.put<Object?>('$__camel__Path/${Uri.encodeComponent(id)}', data: {'name': name});
+  }
+
+  Future<void> delete(String id) async {
+    await _dio.delete<Object?>('$__camel__Path/${Uri.encodeComponent(id)}');
+  }
+}

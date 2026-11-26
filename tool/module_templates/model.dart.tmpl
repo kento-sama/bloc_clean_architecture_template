@@ -1,0 +1,13 @@
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+
+class __pascal__Model extends __pascal__Entity {
+  const __pascal__Model({required super.id, required super.name});
+
+  factory __pascal__Model.fromJson(Map<String, Object?> json) =>
+      __pascal__Model(
+        id: json['id'].toString(),
+        name: json['name']?.toString() ?? '',
+      );
+
+  Map<String, Object?> toJson() => {'id': id, 'name': name};
+}

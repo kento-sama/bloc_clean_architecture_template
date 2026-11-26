@@ -1,0 +1,20 @@
+import 'package:__package__/features/__snake__/data/datasources/__snake___remote_data_source.dart';
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+import 'package:__package__/features/__snake__/domain/repositories/__snake___repository.dart';
+
+class __pascal__RepositoryImpl implements __pascal__Repository {
+  const __pascal__RepositoryImpl(this._remote);
+  final __pascal__RemoteDataSource _remote;
+
+  @override
+  Future<List<__pascal__Entity>> list() => _remote.list();
+
+  @override
+  Future<void> create(String name) => _remote.create(name);
+
+  @override
+  Future<void> update(String id, String name) => _remote.update(id, name);
+
+  @override
+  Future<void> delete(String id) => _remote.delete(id);
+}

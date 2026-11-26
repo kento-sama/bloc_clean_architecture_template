@@ -1,0 +1,26 @@
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+import 'package:__package__/features/__snake__/domain/repositories/__snake___repository.dart';
+
+class Load__pascal__ {
+  const Load__pascal__(this._repository);
+  final __pascal__Repository _repository;
+  Future<List<__pascal__Entity>> call() => _repository.list();
+}
+
+class Create__pascal__ {
+  const Create__pascal__(this._repository);
+  final __pascal__Repository _repository;
+  Future<void> call(String name) => _repository.create(name);
+}
+
+class Update__pascal__ {
+  const Update__pascal__(this._repository);
+  final __pascal__Repository _repository;
+  Future<void> call(String id, String name) => _repository.update(id, name);
+}
+
+class Delete__pascal__ {
+  const Delete__pascal__(this._repository);
+  final __pascal__Repository _repository;
+  Future<void> call(String id) => _repository.delete(id);
+}

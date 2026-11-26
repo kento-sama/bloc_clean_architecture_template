@@ -1,0 +1,38 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:__package__/core/presentation/bloc_states.dart';
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+import 'package:__package__/features/__snake__/domain/repositories/__snake___repository.dart';
+import 'package:__package__/features/__snake__/domain/usecases/__snake___use_cases.dart';
+
+class __pascal__Cubit extends Cubit<LoadState<List<__pascal__Entity>>> {
+  __pascal__Cubit(this._repository)
+      : super(const LoadState.loading()) {
+    load();
+  }
+
+  final __pascal__Repository _repository;
+
+  Future<void> load() async {
+    emit(const LoadState.loading());
+    try {
+      emit(LoadState.success(await Load__pascal__(_repository)()));
+    } catch (error) {
+      emit(LoadState.failure(error));
+    }
+  }
+
+  Future<void> create(String name) async {
+    await Create__pascal__(_repository)(name);
+    await load();
+  }
+
+  Future<void> updateItem(String id, String name) async {
+    await Update__pascal__(_repository)(id, name);
+    await load();
+  }
+
+  Future<void> delete(String id) async {
+    await Delete__pascal__(_repository)(id);
+    await load();
+  }
+}

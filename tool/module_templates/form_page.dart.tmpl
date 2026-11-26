@@ -1,0 +1,109 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:__package__/core/presentation/app_back_button.dart';
+import 'package:__package__/core/presentation/error_message.dart';
+import 'package:__package__/core/presentation/responsive_layout.dart';
+import 'package:__package__/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+import 'package:__package__/features/__snake__/presentation/cubits/__snake___cubit.dart';
+import 'package:__package__/features/__snake__/__snake___config.dart';
+
+class __pascal__FormPage extends StatefulWidget {
+  const __pascal__FormPage({this.item, super.key});
+  final __pascal__Entity? item;
+
+  @override
+  State<__pascal__FormPage> createState() => ___pascal__FormPageState();
+}
+
+class ___pascal__FormPageState extends State<__pascal__FormPage> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _name;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController(text: widget.item?.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AuthCubit>().state.value;
+    final requiredPermission = widget.item == null
+        ? __camel__CreatePermission
+        : __camel__UpdatePermission;
+    if (user?.canAccess(requiredPermission) != true) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: const AppBackButton(fallback: __camel__Path),
+          title: const Text('Access denied'),
+        ),
+        body: const Center(
+          child: Text('You are not authorized to manage this record.'),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(fallback: __camel__Path),
+        title: Text('${widget.item == null ? 'Create' : 'Edit'} __title__'),
+      ),
+      body: ResponsiveFormLayout(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              TextFormField(
+                controller: _name,
+                enabled: !_isSaving,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Name is required'
+                    : null,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _isSaving ? null : _save,
+                child: Text(_isSaving ? 'Saving...' : 'Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+    try {
+      final cubit = context.read<__pascal__Cubit>();
+      final item = widget.item;
+      if (item == null) {
+        await cubit.create(_name.text.trim());
+      } else {
+        await cubit.updateItem(item.id, _name.text.trim());
+      }
+      if (mounted) context.go(__camel__Path);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage(error))),
+      );
+    }
+  }
+}

@@ -1,0 +1,136 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:__package__/core/presentation/app_back_button.dart';
+import 'package:__package__/core/presentation/error_message.dart';
+import 'package:__package__/core/presentation/responsive_layout.dart';
+import 'package:__package__/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:__package__/features/__snake__/__snake___config.dart';
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+import 'package:__package__/features/__snake__/presentation/cubits/__snake___cubit.dart';
+import 'package:__package__/features/__snake__/presentation/widgets/__snake___actions.dart';
+
+class __pascal__Page extends StatelessWidget {
+  const __pascal__Page({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<__pascal__Cubit>().state;
+    final user = context.watch<AuthCubit>().state.value;
+    return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(fallback: '/dashboard'),
+        title: const Text(__camel__Title),
+      ),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : state.hasError
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(errorMessage(state.error!), textAlign: TextAlign.center),
+                  OutlinedButton(
+                    onPressed: () =>
+                        context.read<__pascal__Cubit>().load(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : (state.value ?? []).isEmpty
+            ? const Center(child: Text('No __title__ records yet.'))
+            : ResponsiveLayout(
+                mobileBuilder: (context) => ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.value!.length,
+                  itemBuilder: (context, index) {
+                    final item = state.value![index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(item.name),
+                        trailing: __pascal__Actions(
+                          item: item,
+                          user: user,
+                          onEdit: () => _edit(context, item),
+                          onDelete: () => _delete(context, item),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                wideBuilder: (context) => SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Name')),
+                          DataColumn(label: Text('Actions')),
+                        ],
+                        rows: [
+                          for (final item in state.value!)
+                            DataRow(cells: [
+                              DataCell(Text(item.name)),
+                              DataCell(__pascal__Actions(
+                                item: item,
+                                user: user,
+                                onEdit: () => _edit(context, item),
+                                onDelete: () => _delete(context, item),
+                              )),
+                            ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+      floatingActionButton: user?.canAccess(__camel__CreatePermission) ?? false
+          ? FloatingActionButton.extended(
+              onPressed: () => _edit(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Create'),
+            )
+          : null,
+    );
+  }
+
+  void _edit(BuildContext context, [__pascal__Entity? item]) {
+    if (item == null) {
+      context.go('$__camel__Path/create');
+    } else {
+      context.go('$__camel__Path/${item.id}/edit', extra: item);
+    }
+  }
+
+  Future<void> _delete(BuildContext context, __pascal__Entity item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete record?'),
+        content: Text('Delete "${item.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await context.read<__pascal__Cubit>().delete(item.id);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage(error))),
+        );
+      }
+    }
+  }
+}

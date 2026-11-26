@@ -1,0 +1,8 @@
+import 'package:__package__/features/__snake__/domain/entities/__snake__.dart';
+
+abstract interface class __pascal__Repository {
+  Future<List<__pascal__Entity>> list();
+  Future<void> create(String name);
+  Future<void> update(String id, String name);
+  Future<void> delete(String id);
+}
