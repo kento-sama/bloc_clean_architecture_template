@@ -1,12 +1,14 @@
 import 'package:clean_bloc/features/auth/domain/entities/auth_user.dart';
 
 class AuthUserModel extends AuthUser {
+  // Models stay in the data layer, where JSON parsing/API adaptation belongs.
   const AuthUserModel({
     required super.id,
     required super.name,
     required super.email,
     required super.permissions,
     required super.roles,
+    super.twoFactorEnabled,
   });
 
   factory AuthUserModel.fromJson(Map<String, Object?> json) {
@@ -20,6 +22,9 @@ class AuthUserModel extends AuthUser {
       email: json['email']?.toString() ?? '',
       permissions: _names(json['permissions']),
       roles: _names(json['roles']),
+      twoFactorEnabled:
+          json['two_factor_enabled'] == true ||
+          json['two_factor_confirmed_at'] != null,
     );
   }
 
@@ -40,5 +45,6 @@ class AuthUserModel extends AuthUser {
     'email': email,
     'permissions': permissions.toList(),
     'roles': roles.toList(),
+    'two_factor_enabled': twoFactorEnabled,
   };
 }

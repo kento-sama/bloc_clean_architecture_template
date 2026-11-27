@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clean_bloc/core/presentation/bloc_states.dart';
 import 'package:clean_bloc/features/auth/domain/entities/auth_user.dart';
+import 'package:clean_bloc/features/auth/domain/entities/auth_login_result.dart';
+import 'package:clean_bloc/features/auth/domain/entities/two_factor_setup.dart';
 import 'package:clean_bloc/features/auth/domain/repositories/auth_repository.dart';
 import 'package:clean_bloc/features/auth/presentation/cubits/auth_cubit.dart';
 
@@ -39,14 +41,16 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthUser?> currentUser() async => null;
 
   @override
-  Future<AuthUser> login(String email, String password) async {
+  Future<AuthLoginResult> login(String email, String password) async {
     if (loginError != null) throw loginError!;
-    return AuthUser(
-      id: '1',
-      name: 'Test User',
-      email: email,
-      permissions: const {},
-      roles: const {},
+    return AuthLoginResult.authenticated(
+      AuthUser(
+        id: '1',
+        name: 'Test User',
+        email: email,
+        permissions: const {},
+        roles: const {},
+      ),
     );
   }
 
@@ -65,4 +69,32 @@ class _FakeAuthRepository implements AuthRepository {
     permissions: const {},
     roles: const {},
   );
+
+  @override
+  Future<AuthUser> completeTwoFactorLogin(
+    String challengeToken,
+    String code,
+  ) async => AuthUser(
+    id: '1',
+    name: 'Test User',
+    email: 'user@example.com',
+    permissions: const {},
+    roles: const {},
+  );
+
+  @override
+  Future<TwoFactorSetup> beginTwoFactorSetup() async =>
+      const TwoFactorSetup(secret: 'SECRET', provisioningUri: 'otpauth://totp');
+
+  @override
+  Future<void> confirmTwoFactorSetup(String code) async {}
+
+  @override
+  Future<void> disableTwoFactor({
+    required String password,
+    required String code,
+  }) async {}
+
+  @override
+  Future<void> deleteAccount({required String password, String? code}) async {}
 }

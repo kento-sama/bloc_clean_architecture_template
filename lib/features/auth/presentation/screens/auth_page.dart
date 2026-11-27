@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -16,16 +17,21 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
+  // Text controllers store form input; the AuthCubit owns application session
+  // state and is reused by routing and all account-related screens.
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _otp = TextEditingController();
+  String? _challengeToken;
 
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _password.dispose();
+    _otp.dispose();
     super.dispose();
   }
 
@@ -113,7 +119,11 @@ class _AuthPageState extends State<AuthPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            widget.isSignup ? 'Create account' : 'Sign in',
+            _challengeToken != null
+                ? 'Two-factor authentication'
+                : widget.isSignup
+                ? 'Create account'
+                : 'Sign in',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
@@ -125,43 +135,68 @@ class _AuthPageState extends State<AuthPage> {
             ),
             const SizedBox(height: 12),
           ],
-          if (widget.isSignup) ...[
+          if (_challengeToken != null) ...[
+            const Text(
+              'Enter the six-digit code from your authenticator app.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
-              controller: _name,
+              controller: _otp,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(8),
+              ],
               decoration: const InputDecoration(
-                labelText: 'Name',
+                labelText: 'Authentication code',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value == null || value.trim().length < 6
+                  ? 'Enter a valid authentication code'
+                  : null,
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
+            if (widget.isSignup) ...[
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: _required,
+              ),
+              const SizedBox(height: 12),
+            ],
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Email is required';
+                }
+                if (!value.contains('@')) return 'Enter a valid email';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
                 border: OutlineInputBorder(),
               ),
               validator: _required,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
           ],
-          TextFormField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Email is required';
-              }
-              if (!value.contains('@')) return 'Enter a valid email';
-              return null;
-            },
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _password,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              border: OutlineInputBorder(),
-            ),
-            validator: _required,
-          ),
-          const SizedBox(height: 20),
           FilledButton(
             onPressed: busy ? null : _submit,
             child: busy
@@ -170,18 +205,35 @@ class _AuthPageState extends State<AuthPage> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(widget.isSignup ? 'Sign up' : 'Sign in'),
+                : Text(
+                    _challengeToken != null
+                        ? 'Verify code'
+                        : widget.isSignup
+                        ? 'Sign up'
+                        : 'Sign in',
+                  ),
           ),
-          TextButton(
-            onPressed: busy
-                ? null
-                : () => context.go(widget.isSignup ? '/login' : '/signup'),
-            child: Text(
-              widget.isSignup
-                  ? 'Already have an account? Sign in'
-                  : 'New here? Create an account',
+          if (_challengeToken != null)
+            TextButton(
+              onPressed: busy
+                  ? null
+                  : () => setState(() {
+                      _challengeToken = null;
+                      _otp.clear();
+                    }),
+              child: const Text('Use different credentials'),
             ),
-          ),
+          if (_challengeToken == null)
+            TextButton(
+              onPressed: busy
+                  ? null
+                  : () => context.go(widget.isSignup ? '/login' : '/signup'),
+              child: Text(
+                widget.isSignup
+                    ? 'Already have an account? Sign in'
+                    : 'New here? Create an account',
+              ),
+            ),
         ],
       ),
     ),
@@ -194,14 +246,24 @@ class _AuthPageState extends State<AuthPage> {
     if (!_formKey.currentState!.validate()) return;
     final cubit = context.read<AuthCubit>();
     try {
-      if (widget.isSignup) {
+      if (_challengeToken != null) {
+        await cubit.completeTwoFactorLogin(_challengeToken!, _otp.text.trim());
+      } else if (widget.isSignup) {
         await cubit.signup(
           name: _name.text.trim(),
           email: _email.text.trim(),
           password: _password.text,
         );
       } else {
-        await cubit.login(_email.text.trim(), _password.text);
+        final result = await cubit.login(_email.text.trim(), _password.text);
+        if (result.requiresTwoFactor) {
+          if (!mounted) return;
+          setState(() {
+            _challengeToken = result.challengeToken;
+            _otp.clear();
+          });
+          return;
+        }
       }
       if (mounted) context.go('/dashboard');
     } catch (_) {}

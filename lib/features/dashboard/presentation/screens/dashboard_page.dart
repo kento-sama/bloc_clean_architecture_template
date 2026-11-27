@@ -10,6 +10,7 @@ import 'package:clean_bloc/features/auth/domain/entities/auth_user.dart';
 import 'package:clean_bloc/features/auth/presentation/cubits/auth_cubit.dart';
 
 class DashboardPage extends StatelessWidget {
+  // BlocBuilder subscribes this presentation widget to session-state changes.
   const DashboardPage({super.key});
 
   @override
@@ -26,6 +27,11 @@ class DashboardPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Dashboard'),
             actions: [
+              IconButton(
+                tooltip: 'My account',
+                icon: const Icon(Icons.account_circle_outlined),
+                onPressed: () => context.push('/account'),
+              ),
               IconButton(
                 tooltip: 'Sign out',
                 icon: const Icon(Icons.logout),

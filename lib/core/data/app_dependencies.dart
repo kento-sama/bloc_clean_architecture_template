@@ -5,6 +5,8 @@ import 'package:clean_bloc/core/data/token_refresh_interceptor.dart';
 import 'package:clean_bloc/core/data/token_storage.dart';
 
 class AppDependencies {
+  // AppDependencies is the composition root for shared infrastructure.
+  // One Dio instance and one secure token store are reused by every Cubit.
   AppDependencies()
     : tokenStorage = const TokenStorage(FlutterSecureStorage()) {
     dio = Dio(

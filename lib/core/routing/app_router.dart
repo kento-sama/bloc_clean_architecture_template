@@ -6,6 +6,8 @@ import 'package:clean_bloc/app_modules.dart';
 import 'package:clean_bloc/core/presentation/bloc_states.dart';
 import 'package:clean_bloc/features/auth/domain/entities/auth_user.dart';
 import 'package:clean_bloc/features/auth/presentation/screens/auth_page.dart';
+import 'package:clean_bloc/features/auth/presentation/screens/account_page.dart';
+import 'package:clean_bloc/features/auth/presentation/screens/account_security_page.dart';
 import 'package:clean_bloc/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:clean_bloc/features/dashboard/presentation/screens/dashboard_page.dart';
 import 'package:clean_bloc/features/users/domain/entities/user.dart';
@@ -24,6 +26,8 @@ createAppRouter(AuthCubit authCubit) {
   router = GoRouter(
     initialLocation: '/dashboard',
     redirect: (context, state) {
+      // Guard the route graph with auth state and effective permissions.
+      // Laravel remains the authoritative server-side authorization boundary.
       final auth = authCubit.state;
       final user = auth.value;
       final path = state.matchedLocation;
@@ -55,6 +59,11 @@ createAppRouter(AuthCubit authCubit) {
         builder: (_, _) => const AuthPage(isSignup: true),
       ),
       GoRoute(path: '/dashboard', builder: (_, _) => const DashboardPage()),
+      GoRoute(path: '/account', builder: (_, _) => const AccountPage()),
+      GoRoute(
+        path: '/account/security',
+        builder: (_, _) => const AccountSecurityPage(),
+      ),
       for (final feature in appModules)
         GoRoute(path: feature.path, builder: (_, _) => feature.pageBuilder()),
       GoRoute(

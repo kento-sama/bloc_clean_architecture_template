@@ -119,6 +119,25 @@ Dependencies point inward:
 - Presentation code contains BLoC/Cubit classes and Flutter widgets.
 - Feature entry files provide route metadata, icons, permissions, and pages.
 
+## Learning the architecture
+
+The codebase is arranged as a guided Clean Architecture example:
+
+- **Entity** files are framework-independent business objects.
+- **Repository interfaces** describe what the application needs, not how HTTP
+  or secure storage implements it.
+- **Use cases** expose one small application operation to presentation code.
+- **Models** convert Laravel JSON into entities and validate required fields.
+- **Remote data sources** own Dio calls, paths, request payloads, and envelopes.
+- **Repository implementations** translate remote responses and persist tokens.
+- **Cubits** emit loading, success, and failure states for presentation widgets.
+- **Screens** render state and collect user input without implementing API rules.
+- **Routers** centralize navigation and UI route guards.
+
+Focused comments explain each boundary. Security rules and OTP validation must
+still be enforced by Laravel; client-side comments, permission checks, and
+route redirects are usability and defense-in-depth measures.
+
 ## Scaffold a module
 
 Create a module using a lowercase snake-case name:
@@ -178,6 +197,22 @@ Create and edit forms are addressable by route:
 The edit route receives the selected entity through GoRouter `extra` for normal
 navigation. Direct URL refreshes may not have that entity state and should
 return to the module list or load the record by ID.
+
+## Account and security
+
+The dashboard profile action opens `/account`, which displays the signed-in
+user's name, email, account ID, roles, and current 2FA state. Security settings
+are intentionally one level deeper at `/account/security`.
+
+Both account screens watch `AuthCubit` rather than duplicating session data.
+After 2FA activation or deactivation, the Cubit refreshes the signed-in user
+from the API so the UI reflects server-confirmed state.
+
+The 2FA flow supports OTP login challenges, authenticator setup and
+confirmation, password-and-OTP deactivation, and password confirmation for
+account deletion. The Flutter app does not generate or verify OTPs; Laravel
+owns challenge expiration, token issuance, secret storage, and recovery codes.
+See [docs/laravel-api-contract.md](docs/laravel-api-contract.md).
 
 Use `AppBackButton` for pages that need a stable back action. It pops an
 existing route and falls back to a module or dashboard route for direct URLs.

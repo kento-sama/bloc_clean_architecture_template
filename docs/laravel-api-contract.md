@@ -30,6 +30,11 @@ requests should return 401. The UI reads `message` directly when present.
 | `POST` | `/auth/refresh` | Refresh token | Rotate the token pair |
 | `GET` | `/auth/me` | Access token | Return the signed-in user |
 | `POST` | `/auth/logout` | Access token | Revoke the current session |
+| `POST` | `/auth/2fa/challenge` | Public with challenge token | Complete a 2FA login |
+| `POST` | `/auth/2fa/setup` | Access token | Begin 2FA activation |
+| `POST` | `/auth/2fa/confirm` | Access token | Confirm and activate 2FA |
+| `DELETE` | `/auth/2fa` | Access token | Deactivate 2FA |
+| `DELETE` | `/auth/me` | Access token | Delete the signed-in account |
 
 Login body:
 
@@ -119,6 +124,62 @@ token. On a protected 401, the client:
 
 The app clears the stored pair if the refresh returns 401 or 403, if no refresh
 token exists, or if the refresh response omits either token.
+
+## Two-factor authentication
+
+For a user with 2FA enabled, `/auth/login` must return a short-lived,
+single-use challenge instead of access and refresh tokens:
+
+```json
+{
+  "data": {
+    "two_factor_required": true,
+    "challenge_token": "short-lived-opaque-challenge"
+  }
+}
+```
+
+Complete the challenge with:
+
+```json
+POST /auth/2fa/challenge
+{
+  "challenge_token": "short-lived-opaque-challenge",
+  "code": "123456"
+}
+```
+
+Authenticated users begin activation with `POST /auth/2fa/setup`:
+
+```json
+{
+  "data": {
+    "secret": "BASE32-AUTHENTICATOR-SECRET",
+    "provisioning_uri": "otpauth://totp/Example:user@example.test?secret=...",
+    "recovery_codes": ["single-use-code-1", "single-use-code-2"]
+  }
+}
+```
+
+Activation remains pending until `POST /auth/2fa/confirm` receives a valid
+`{"code":"123456"}`. The signed-in user response should include
+`"two_factor_enabled": true`; `two_factor_confirmed_at` is also recognized.
+
+Deactivation uses `DELETE /auth/2fa`:
+
+```json
+{"password":"current-password","code":"123456"}
+```
+
+Account deletion uses `DELETE /auth/me`:
+
+```json
+{"password":"current-password","code":"123456"}
+```
+
+The OTP code is required for account deletion only when 2FA is active. Laravel
+must validate passwords and OTPs, expire challenge tokens, revoke sessions,
+encrypt authenticator secrets, and hash recovery codes.
 
 ## Resource endpoints
 

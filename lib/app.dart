@@ -24,6 +24,8 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  // These fields create one long-lived instance of each shared Cubit. Recreating
+  // them below would discard session/list state on every rebuild.
   final dependencies = AppDependencies();
   late final authCubit = AuthCubit(
     AuthRepositoryImpl(
