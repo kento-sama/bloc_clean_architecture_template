@@ -30,11 +30,7 @@ void main(List<String> arguments) {
       'Created module: lib${Platform.pathSeparator}features'
       '${Platform.pathSeparator}$name',
     );
-    stdout.writeln(
-      'Registered ${variableName}Cubit, ${variableName}Feature, and '
-      'create/edit routes. Adapt the API, fields, and permissions '
-      'for your backend.',
-    );
+    _printNextSteps(name, variableName);
   } on ArgumentError catch (error) {
     stderr.writeln(error.message);
     exitCode = 64;
@@ -339,6 +335,45 @@ String _insertBeforeUnique(String text, String anchor, String insertion) {
     );
   }
   return text.replaceFirst(anchor, '$insertion$anchor');
+}
+
+void _printNextSteps(String moduleName, String variableName) {
+  stdout.writeln('');
+  stdout.writeln('Next steps to make your module operational:');
+  stdout.writeln('');
+  stdout.writeln('1. Register the feature:');
+  stdout.writeln('   • Open lib/app_modules.dart');
+  stdout.writeln(
+    '   • Import: import \'package:\$PACKAGE/features/$moduleName/${moduleName}_feature.dart\';',
+  );
+  stdout.writeln('   • Add ${variableName}Feature to the appModules list');
+  stdout.writeln('');
+  stdout.writeln('2. Create Cubit and data sources (auto-registered):');
+  stdout.writeln('   • Open lib/app.dart');
+  stdout.writeln(
+    '   • Verify imports for ${variableName}Cubit, ${variableName}RemoteDataSource, and ${variableName}RepositoryImpl are added',
+  );
+  stdout.writeln('');
+  stdout.writeln('3. Add routes (auto-registered):');
+  stdout.writeln('   • Open lib/core/routing/app_router.dart');
+  stdout.writeln(
+    '   • Verify imports and GoRoutes for create and edit paths are added',
+  );
+  stdout.writeln('');
+  stdout.writeln('4. Customize for your API:');
+  stdout.writeln(
+    '   • Edit lib/features/$moduleName/data/datasources/${moduleName}_remote_data_source.dart',
+  );
+  stdout.writeln('   • Update the API endpoints and response handling');
+  stdout.writeln(
+    '   • Edit lib/features/$moduleName/domain/entities/$moduleName.dart',
+  );
+  stdout.writeln('   • Add your entity fields');
+  stdout.writeln(
+    '   • Edit templates in lib/features/$moduleName/presentation/',
+  );
+  stdout.writeln('   • Adjust permissions and form fields for your backend');
+  stdout.writeln('');
 }
 
 String _readPackageName(File pubspec) {
