@@ -155,11 +155,13 @@ Authenticated users begin activation with `POST /auth/2fa/setup`:
 {
   "data": {
     "secret": "BASE32-AUTHENTICATOR-SECRET",
-    "provisioning_uri": "otpauth://totp/Example:user@example.test?secret=...",
-    "recovery_codes": ["single-use-code-1", "single-use-code-2"]
+    "provisioning_uri": "otpauth://totp/Example:user@example.test?secret=..."
   }
 }
 ```
+
+The Flutter client renders the provisioning URI as a QR code for Google
+Authenticator and also displays `secret` as a manual setup fallback.
 
 Activation remains pending until `POST /auth/2fa/confirm` receives a valid
 `{"code":"123456"}`. The signed-in user response should include
@@ -179,7 +181,7 @@ Account deletion uses `DELETE /auth/me`:
 
 The OTP code is required for account deletion only when 2FA is active. Laravel
 must validate passwords and OTPs, expire challenge tokens, revoke sessions,
-encrypt authenticator secrets, and hash recovery codes.
+encrypt authenticator secrets. Recovery is managed by technical support.
 
 ## Resource endpoints
 

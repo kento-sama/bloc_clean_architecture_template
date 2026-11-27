@@ -5,7 +5,6 @@ class TwoFactorSetupModel extends TwoFactorSetup {
   const TwoFactorSetupModel({
     required super.secret,
     required super.provisioningUri,
-    super.recoveryCodes,
   });
 
   factory TwoFactorSetupModel.fromJson(Map<String, Object?> json) {
@@ -19,13 +18,9 @@ class TwoFactorSetupModel extends TwoFactorSetup {
         'The two-factor setup API must return secret and provisioning_uri.',
       );
     }
-    final codes = json['recovery_codes'];
     return TwoFactorSetupModel(
       secret: secret,
       provisioningUri: provisioningUri,
-      recoveryCodes: codes is List
-          ? codes.map((code) => code.toString()).toList()
-          : const [],
     );
   }
 }

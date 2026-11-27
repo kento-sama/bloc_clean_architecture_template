@@ -35,12 +35,10 @@ void main() {
         'secret': 'JBSWY3DPEHPK3PXP',
         'provisioning_uri':
             'otpauth://totp/Example:user@example.test?secret=ABC',
-        'recovery_codes': ['code-one', 'code-two'],
       });
 
       expect(model.secret, 'JBSWY3DPEHPK3PXP');
       expect(model.provisioningUri, startsWith('otpauth://totp/'));
-      expect(model.recoveryCodes, ['code-one', 'code-two']);
     });
 
     test('TwoFactorSetupModel rejects incomplete setup data', () {

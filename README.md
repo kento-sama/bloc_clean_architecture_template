@@ -208,10 +208,11 @@ Both account screens watch `AuthCubit` rather than duplicating session data.
 After 2FA activation or deactivation, the Cubit refreshes the signed-in user
 from the API so the UI reflects server-confirmed state.
 
-The 2FA flow supports OTP login challenges, authenticator setup and
-confirmation, password-and-OTP deactivation, and password confirmation for
-account deletion. The Flutter app does not generate or verify OTPs; Laravel
-owns challenge expiration, token issuance, secret storage, and recovery codes.
+The 2FA flow supports OTP login challenges, authenticator setup by QR code or
+manual Base32 secret entry and confirmation, password-and-OTP deactivation,
+and password confirmation for account deletion. The Flutter app does not
+generate or verify OTPs; Laravel
+owns challenge expiration, token issuance, secret storage, and support-led recovery.
 See [docs/laravel-api-contract.md](docs/laravel-api-contract.md).
 
 Use `AppBackButton` for pages that need a stable back action. It pops an

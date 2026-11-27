@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:clean_bloc/core/presentation/app_back_button.dart';
 import 'package:clean_bloc/core/presentation/bloc_states.dart';
 import 'package:clean_bloc/core/presentation/error_message.dart';
@@ -91,7 +92,30 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
             ),
             if (_setup != null) ...[
               const SizedBox(height: 20),
-              const Text('1. Add this secret to your authenticator app.'),
+              const Text(
+                '1. Scan this QR code with Google Authenticator.',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              // The provisioning URI is encoded in the QR so Google
+              // Authenticator receives the issuer, account, and secret.
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.white,
+                  child: QrImageView(
+                    data: _setup!.provisioningUri,
+                    size: 220,
+                    gapless: true,
+                    backgroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Or enter this secret manually:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -103,17 +127,6 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: const Text('Authenticator setup URI'),
-                children: [SelectableText(_setup!.provisioningUri)],
-              ),
-              if (_setup!.recoveryCodes.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                const Text('Save these recovery codes securely:'),
-                for (final code in _setup!.recoveryCodes) SelectableText(code),
-              ],
               const SizedBox(height: 16),
               const Text('2. Enter a code to finish activation.'),
               const SizedBox(height: 8),
