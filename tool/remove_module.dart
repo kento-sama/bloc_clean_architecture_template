@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'module_name.dart';
+
 void main(List<String> arguments) {
   final name = arguments.isNotEmpty
       ? arguments.first
@@ -54,24 +56,26 @@ void _unregisterGeneratedModule(Directory root, String separator, String name) {
   final pubspec = File('${root.path}${separator}pubspec.yaml');
   final packageName = _readPackageName(pubspec);
   final words = name.split('_');
-  final className = words
+  final singular = singularSnakeCase(name);
+  final singularWords = singular.split('_');
+  final className = singularWords
       .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
       .join();
   final variableName =
-      '${words.first}${className.substring(words.first.length)}';
+      '${words.first}${words.skip(1).map((word) => '${word[0].toUpperCase()}${word.substring(1)}').join()}';
 
   final appFile = File('${root.path}${separator}lib${separator}app.dart');
   var appText = appFile.readAsStringSync();
   appText = appText.replaceAll(
-    "import 'package:$packageName/features/$name/presentation/cubits/${name}_cubit.dart';",
+    "import 'package:$packageName/features/$name/presentation/cubits/${singular}_cubit.dart';",
     '',
   );
   appText = appText.replaceAll(
-    "import 'package:$packageName/features/$name/data/datasources/${name}_remote_data_source.dart';",
+    "import 'package:$packageName/features/$name/data/datasources/${singular}_remote_data_source.dart';",
     '',
   );
   appText = appText.replaceAll(
-    "import 'package:$packageName/features/$name/data/repositories/${name}_repository_impl.dart';",
+    "import 'package:$packageName/features/$name/data/repositories/${singular}_repository_impl.dart';",
     '',
   );
   appText = appText.replaceAll(
@@ -96,7 +100,7 @@ void _unregisterGeneratedModule(Directory root, String separator, String name) {
   );
   var modulesText = modulesFile.readAsStringSync();
   modulesText = modulesText.replaceAll(
-    "import 'package:$packageName/features/$name/${name}_feature.dart';",
+    "import 'package:$packageName/features/$name/${singular}_feature.dart';",
     '',
   );
   modulesText = modulesText.replaceAll('  ${variableName}Feature,\n', '');
@@ -112,9 +116,9 @@ void _unregisterGeneratedModule(Directory root, String separator, String name) {
   );
   var routerText = routerFile.readAsStringSync();
   for (final import in [
-    "import 'package:$packageName/features/$name/domain/entities/$name.dart';",
-    "import 'package:$packageName/features/$name/presentation/screens/${name}_form_page.dart';",
-    "import 'package:$packageName/features/$name/${name}_config.dart';",
+    "import 'package:$packageName/features/$name/domain/entities/$singular.dart';",
+    "import 'package:$packageName/features/$name/presentation/screens/${singular}_form_page.dart';",
+    "import 'package:$packageName/features/$name/${singular}_config.dart';",
   ]) {
     routerText = routerText.replaceAll(import, '');
   }
@@ -133,7 +137,8 @@ void _unregisterGeneratedModule(Directory root, String separator, String name) {
 
 String _readPackageName(File pubspec) {
   for (final line in pubspec.readAsLinesSync()) {
-    final match = RegExp(r'^name:\s*([a-z][a-z0-9_]*)').firstMatch(line);
+    final match = RegExp(r'^name:\s*["\x27]?([a-z][a-z0-9_]*)["\x27]?')
+        .firstMatch(line);
     if (match != null) return match.group(1)!;
   }
   throw const FormatException(

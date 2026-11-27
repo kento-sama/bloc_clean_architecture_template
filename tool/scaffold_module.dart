@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'module_name.dart';
+
 void main(List<String> arguments) {
   final name = arguments.isNotEmpty
       ? arguments.first
@@ -22,11 +24,8 @@ void main(List<String> arguments) {
       return;
     }
     final words = name.split('_');
-    final className = words
-        .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
-        .join();
     final variableName =
-        '${words.first}${className.substring(words.first.length)}';
+        '${words.first}${words.skip(1).map((word) => '${word[0].toUpperCase()}${word.substring(1)}').join()}';
     stdout.writeln(
       'Created module: lib${Platform.pathSeparator}features'
       '${Platform.pathSeparator}$name',
@@ -67,11 +66,13 @@ void scaffoldModule(Directory root, String name) {
   }
 
   final words = name.split('_');
-  final className = words
+  final singular = singularSnakeCase(name);
+  final singularWords = singular.split('_');
+  final className = singularWords
       .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
       .join();
   final variableName =
-      '${words.first}${className.substring(words.first.length)}';
+      '${words.first}${words.skip(1).map((word) => '${word[0].toUpperCase()}${word.substring(1)}').join()}';
   final title = words
       .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
       .join(' ');
@@ -79,44 +80,45 @@ void scaffoldModule(Directory root, String name) {
   final packageName = _readPackageName(pubspec);
   final replacements = {
     '__snake__': name,
+    '__singular__': singular,
     '__camel__': variableName,
     '__pascal__': className,
     '__title__': title,
     '__package__': packageName,
   };
   final templates = <String, String>{
-    'config.dart.tmpl': '${name}_config.dart',
-    'feature.dart.tmpl': '${name}_feature.dart',
+    'config.dart.tmpl': '${singular}_config.dart',
+    'feature.dart.tmpl': '${singular}_feature.dart',
     'entity.dart.tmpl':
         'domain$separator'
-        'entities$separator$name.dart',
+        'entities$separator$singular.dart',
     'repository.dart.tmpl':
         'domain$separator'
-        'repositories$separator${name}_repository.dart',
+        'repositories$separator${singular}_repository.dart',
     'use_cases.dart.tmpl':
         'domain$separator'
-        'usecases$separator${name}_use_cases.dart',
+        'usecases$separator${singular}_use_cases.dart',
     'model.dart.tmpl':
         'data$separator'
-        'models$separator${name}_model.dart',
+        'models$separator${singular}_model.dart',
     'api.dart.tmpl':
         'data$separator'
-        'datasources$separator${name}_remote_data_source.dart',
+        'datasources$separator${singular}_remote_data_source.dart',
     'repository_impl.dart.tmpl':
         'data$separator'
-        'repositories$separator${name}_repository_impl.dart',
+        'repositories$separator${singular}_repository_impl.dart',
     'cubit.dart.tmpl':
         'presentation$separator'
-        'cubits$separator${name}_cubit.dart',
+        'cubits$separator${singular}_cubit.dart',
     'page.dart.tmpl':
         'presentation$separator'
-        'screens$separator${name}_page.dart',
+        'screens$separator${singular}_page.dart',
     'form_page.dart.tmpl':
         'presentation$separator'
-        'screens$separator${name}_form_page.dart',
+        'screens$separator${singular}_form_page.dart',
     'actions_widget.dart.tmpl':
         'presentation$separator'
-        'widgets$separator${name}_actions.dart',
+        'widgets$separator${singular}_actions.dart',
   };
 
   final rendered = <String, String>{};
@@ -145,6 +147,7 @@ void scaffoldModule(Directory root, String name) {
     separator,
     packageName,
     name,
+    singular,
     className,
     variableName,
   );
@@ -178,18 +181,20 @@ void _registerGeneratedModule(
   String separator,
   String packageName,
   String name,
+  String singular,
   String className,
   String variableName,
 ) {
-  _patchAppRoot(root, packageName, name, className, variableName);
-  _patchAppModules(root, packageName, name, variableName);
-  _patchAppRouter(root, packageName, name, className, variableName);
+  _patchAppRoot(root, packageName, name, singular, className, variableName);
+  _patchAppModules(root, packageName, name, singular, variableName);
+  _patchAppRouter(root, packageName, name, singular, className, variableName);
 }
 
 void _patchAppRoot(
   Directory root,
   String packageName,
   String name,
+  String singular,
   String className,
   String variableName,
 ) {
@@ -198,9 +203,9 @@ void _patchAppRoot(
   );
   var text = file.readAsStringSync();
   final imports = [
-    "import 'package:$packageName/features/$name/presentation/cubits/${name}_cubit.dart';",
-    "import 'package:$packageName/features/$name/data/datasources/${name}_remote_data_source.dart';",
-    "import 'package:$packageName/features/$name/data/repositories/${name}_repository_impl.dart';",
+    "import 'package:$packageName/features/$name/presentation/cubits/${singular}_cubit.dart';",
+    "import 'package:$packageName/features/$name/data/datasources/${singular}_remote_data_source.dart';",
+    "import 'package:$packageName/features/$name/data/repositories/${singular}_repository_impl.dart';",
   ].join('\n');
   text = _insertAfterUnique(
     text,
@@ -237,6 +242,7 @@ void _patchAppModules(
   Directory root,
   String packageName,
   String name,
+  String singular,
   String variableName,
 ) {
   final file = File(
@@ -246,7 +252,7 @@ void _patchAppModules(
   text = _insertAfterUnique(
     text,
     "import 'package:$packageName/features/users/user_feature.dart';",
-    "\nimport 'package:$packageName/features/$name/${name}_feature.dart';",
+    "\nimport 'package:$packageName/features/$name/${singular}_feature.dart';",
   );
   text = text.replaceFirst(
     'const appModules = <AppFeature>[userFeature, roleFeature, permissionFeature];',
@@ -264,6 +270,7 @@ void _patchAppRouter(
   Directory root,
   String packageName,
   String name,
+  String singular,
   String className,
   String variableName,
 ) {
@@ -275,9 +282,9 @@ void _patchAppRouter(
   );
   var text = file.readAsStringSync();
   final imports = [
-    "import 'package:$packageName/features/$name/domain/entities/$name.dart';",
-    "import 'package:$packageName/features/$name/presentation/screens/${name}_form_page.dart';",
-    "import 'package:$packageName/features/$name/${name}_config.dart';",
+    "import 'package:$packageName/features/$name/domain/entities/$singular.dart';",
+    "import 'package:$packageName/features/$name/presentation/screens/${singular}_form_page.dart';",
+    "import 'package:$packageName/features/$name/${singular}_config.dart';",
   ].join('\n');
   text = _insertAfterUnique(
     text,
@@ -339,7 +346,8 @@ String _readPackageName(File pubspec) {
     throw FileSystemException('pubspec.yaml was not found', pubspec.path);
   }
   for (final line in pubspec.readAsLinesSync()) {
-    final match = RegExp(r'^name:\s*([a-z][a-z0-9_]*)').firstMatch(line);
+    final match = RegExp(r'^name:\s*["\x27]?([a-z][a-z0-9_]*)["\x27]?')
+        .firstMatch(line);
     if (match != null) return match.group(1)!;
   }
   throw const FormatException(

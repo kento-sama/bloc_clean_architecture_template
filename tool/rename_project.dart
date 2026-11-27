@@ -64,22 +64,13 @@ void renameProject(Directory root, String name) {
     }
   }
 
-  final oldTitle = _readWebTitle(root);
   final newTitle = name
       .split('_')
       .where((word) => word.isNotEmpty)
       .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
       .join(' ');
 
-  if (oldTitle.isNotEmpty) {
-    _replaceInTextFiles(
-      root,
-      oldTitle,
-      newTitle,
-      const ['lib', 'web'],
-      const {'.dart', '.html', '.json'},
-    );
-  }
+  _renameWebMetadata(root, oldName, name, newTitle);
 
   _renameIdeMetadata(root, oldName, name);
 
@@ -137,7 +128,8 @@ void _renameIdeMetadata(Directory root, String oldName, String newName) {
 
 String _readPackageName(File pubspec) {
   for (final line in pubspec.readAsLinesSync()) {
-    final match = RegExp(r'^name:\s*([a-z][a-z0-9_]*)').firstMatch(line);
+    final match = RegExp(r'^name:\s*["\x27]?([a-z][a-z0-9_]*)["\x27]?')
+        .firstMatch(line);
     if (match != null) return match.group(1)!;
   }
   throw const FormatException(
@@ -145,43 +137,44 @@ String _readPackageName(File pubspec) {
   );
 }
 
-String _readWebTitle(Directory root) {
+void _renameWebMetadata(
+  Directory root,
+  String oldName,
+  String newName,
+  String newTitle,
+) {
   final manifest = File(
     '${root.path}${Platform.pathSeparator}web'
     '${Platform.pathSeparator}manifest.json',
   );
-  if (!manifest.existsSync()) return '';
-  String line = '';
-  for (final candidate in manifest.readAsLinesSync()) {
-    if (candidate.contains('"name"')) {
-      line = candidate;
-      break;
-    }
+  if (manifest.existsSync()) {
+    var text = manifest.readAsStringSync();
+    text = text.replaceAll(
+      RegExp(r'("name"\s*:\s*)"[^"]*"'),
+      '"name": "$newTitle"',
+    );
+    text = text.replaceAll(
+      RegExp(r'("short_name"\s*:\s*)"[^"]*"'),
+      '"short_name": "$newTitle"',
+    );
+    text = text.replaceAll(oldName, newName);
+    manifest.writeAsStringSync(text);
   }
-  final match = RegExp(r'"name"\s*:\s*"([^"]*)"').firstMatch(line);
-  return match?.group(1) ?? '';
-}
 
-void _replaceInTextFiles(
-  Directory root,
-  String oldText,
-  String newText,
-  List<String> directories,
-  Set<String> extensions,
-) {
-  final separator = Platform.pathSeparator;
-  for (final directoryName in directories) {
-    final directory = Directory('${root.path}$separator$directoryName');
-    if (!directory.existsSync()) continue;
-    for (final file
-        in directory
-            .listSync(recursive: true, followLinks: false)
-            .whereType<File>()
-            .where((file) => extensions.any(file.path.endsWith))) {
-      final text = file.readAsStringSync();
-      if (text.contains(oldText)) {
-        file.writeAsStringSync(text.replaceAll(oldText, newText));
-      }
-    }
-  }
+  final index = File(
+    '${root.path}${Platform.pathSeparator}web'
+    '${Platform.pathSeparator}index.html',
+  );
+  if (!index.existsSync()) return;
+  var text = index.readAsStringSync();
+  text = text.replaceAll(
+    RegExp(r'(<title>)[^<]*(</title>)'),
+    '<title>$newTitle</title>',
+  );
+  text = text.replaceAll(
+    RegExp(r'(apple-mobile-web-app-title"\s+content=")[^"]*(")'),
+    'apple-mobile-web-app-title" content="$newTitle"',
+  );
+  text = text.replaceAll(oldName, newName);
+  index.writeAsStringSync(text);
 }
